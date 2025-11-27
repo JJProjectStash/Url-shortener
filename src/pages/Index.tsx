@@ -106,7 +106,7 @@ export default function Index() {
             </div>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-fade-in-up animation-delay-500 font-medium">
-              An enterprise-grade URL shortener demonstrating{" "}
+              A URL shortener demonstrating{" "}
               <span className="text-blue-600 dark:text-blue-400 font-semibold">
                 Hash Maps (O(1) lookups)
               </span>{" "}
