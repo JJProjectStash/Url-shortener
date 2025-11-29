@@ -1,9 +1,9 @@
 import { useState } from "react";
-import UrlShortener from "@/components/UrlShortener";
-import UrlList from "@/components/UrlList";
-import Analytics from "@/components/Analytics";
-import { Card, CardContent } from "@/components/ui/card";
-import { Link2, Database, Zap } from "lucide-react";
+import UrlShortener from "./components/UrlShortener";
+import UrlList from "./components/UrlList";
+import Analytics from "./components/Analytics";
+import Hero from "./components/Hero";
+import Features from "./components/Features";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   FloatingParticles,
@@ -84,105 +84,8 @@ export default function Index() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 relative z-10">
         <div className="max-w-6xl mx-auto space-y-8">
-          {/* Hero Section with enhanced title animations */}
-          <div className="text-center space-y-6 animate-fade-in-up py-8">
-            <h2 className="text-6xl md:text-7xl font-extrabold text-gray-900 dark:text-white mb-4 leading-tight">
-              <span className="inline-block animate-fade-in-up">Shorten</span>{" "}
-              <span className="inline-block animate-fade-in-up animation-delay-100">
-                Your
-              </span>{" "}
-              <span className="inline-block animate-fade-in-up animation-delay-200">
-                URLs
-              </span>
-              <br />
-              <span className="gradient-text animate-gradient inline-block animate-fade-in-up animation-delay-300 text-7xl md:text-8xl">
-                Instantly
-              </span>
-            </h2>
-
-            {/* Animated underline */}
-            <div className="flex justify-center animate-fade-in-up animation-delay-400">
-              <div className="h-1 w-32 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full animate-gradient" />
-            </div>
-
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-fade-in-up animation-delay-500 font-medium">
-              FastLinks is a URL shortener demonstrating{" "}
-              <span className="text-blue-600 dark:text-blue-400 font-semibold">
-                Hash Maps (O(1) lookups)
-              </span>{" "}
-              and{" "}
-              <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                Queue-based rate limiting
-              </span>
-              .
-              <br />
-              Built with modern web technologies.
-            </p>
-          </div>
-
-          {/* Features */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-up animation-delay-200">
-            <Card className="group hover-lift border-2 hover:border-yellow-500/50 dark:hover:border-yellow-400/50 transition-all duration-500 overflow-hidden relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-              <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardContent className="pt-6 relative z-10">
-                <div className="flex items-start gap-3">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-yellow-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse-glow" />
-                    <Zap className="h-6 w-6 text-yellow-600 dark:text-yellow-400 mt-1 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 relative z-10" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1 dark:text-white text-lg group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300">
-                      O(1) Lookups
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Hash Map implementation for instant URL retrieval
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="group hover-lift border-2 hover:border-blue-500/50 dark:hover:border-blue-400/50 transition-all duration-500 overflow-hidden relative animation-delay-100 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardContent className="pt-6 relative z-10">
-                <div className="flex items-start gap-3">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-blue-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse-glow" />
-                    <Database className="h-6 w-6 text-blue-600 dark:text-blue-400 mt-1 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 relative z-10" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1 dark:text-white text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
-                      Queue-Based Limiting
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      FIFO queue for rate limiting and abuse prevention
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="group hover-lift border-2 hover:border-green-500/50 dark:hover:border-green-400/50 transition-all duration-500 overflow-hidden relative animation-delay-200 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-              <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardContent className="pt-6 relative z-10">
-                <div className="flex items-start gap-3">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-green-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse-glow" />
-                    <Link2 className="h-6 w-6 text-green-600 dark:text-green-400 mt-1 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 relative z-10" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1 dark:text-white text-lg group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-300">
-                      Click Analytics
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Track clicks and view detailed statistics
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
+          <Hero />
+          <Features />
           {/* Main Functionality */}
           <div className="animate-fade-in-up animation-delay-400">
             {selectedShortCode ? (
