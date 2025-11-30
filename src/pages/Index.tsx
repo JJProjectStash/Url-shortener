@@ -11,6 +11,7 @@ import {
   LightModeDecoration,
   DarkModeDecoration,
 } from "./components/AnimatedSVGs";
+import Footer from "./components/Footer";
 
 export default function Index() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -107,16 +108,7 @@ export default function Index() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t mt-12 py-6 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md transition-all duration-700 relative z-10">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground space-y-2">
-          <p className="animate-fade-in font-medium">
-            Built with React, Shadcn-UI, Node.js, Express, and MongoDB
-          </p>
-          <p className="animate-fade-in animation-delay-100">
-            Demonstrating Hash Maps and Queue data structures
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
