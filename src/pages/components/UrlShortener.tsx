@@ -19,8 +19,16 @@ import {
   ChevronUp,
   Calendar,
   Tag,
+  QrCode,
+  Download,
 } from "lucide-react";
-import { shortenUrl, copyToClipboard } from "@/services/api";
+import {
+  shortenUrl,
+  copyToClipboard,
+  generateQRCode,
+  getDefaultExpiryDate,
+  getMaxExpiryDate,
+} from "@/services/api";
 import { toast } from "sonner";
 import {
   AnimatedUrlProcess,
@@ -38,17 +46,36 @@ export default function UrlShortener({ onUrlCreated }: UrlShortenerProps) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     shortUrl: string;
+    shortCode: string;
     originalUrl: string;
+    qrCode?: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [expiresAt, setExpiresAt] = useState("");
+  const [expiresAt, setExpiresAt] = useState(getDefaultExpiryDate());
   const [category, setCategory] = useState("");
+  const [loadingQR, setLoadingQR] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  const fetchQRCode = async (shortCode: string) => {
+    setLoadingQR(true);
+    try {
+      const response = await generateQRCode(shortCode);
+      if (response.success && response.data) {
+        setResult((prev) =>
+          prev ? { ...prev, qrCode: response.data!.qrCode } : null
+        );
+      }
+    } catch (err) {
+      console.error("Failed to fetch QR code:", err);
+    } finally {
+      setLoadingQR(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,24 +98,29 @@ export default function UrlShortener({ onUrlCreated }: UrlShortenerProps) {
     setResult(null);
 
     try {
+      // Always use the expiration date (default is 6 months)
       const response = await shortenUrl(
         url,
-        expiresAt || undefined,
+        expiresAt || getDefaultExpiryDate(),
         category || undefined
       );
 
       if (response.success && response.data) {
         setResult({
           shortUrl: response.data.shortUrl,
+          shortCode: response.data.shortCode,
           originalUrl: response.data.originalUrl,
         });
         setUrl("");
-        setExpiresAt("");
+        setExpiresAt(getDefaultExpiryDate());
         setCategory("");
         toast.success("URL shortened successfully!", {
           description: "Your shortened link is ready to use",
         });
         onUrlCreated();
+
+        // Automatically fetch QR code
+        fetchQRCode(response.data.shortCode);
       } else {
         toast.error(response.error || "Failed to shorten URL");
       }
@@ -209,11 +241,11 @@ export default function UrlShortener({ onUrlCreated }: UrlShortenerProps) {
                   onChange={(e) => setExpiresAt(e.target.value)}
                   disabled={loading}
                   min={new Date().toISOString().split("T")[0]}
+                  max={getMaxExpiryDate()}
                   className="h-10"
-                  placeholder="Optional"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Link will stop working after this date
+                  Default: 6 months (max). Link expires after this date.
                 </p>
               </div>
               <div className="space-y-2">
@@ -261,25 +293,74 @@ export default function UrlShortener({ onUrlCreated }: UrlShortenerProps) {
                     <span className="font-medium">Original:</span>{" "}
                     {result.originalUrl}
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap bg-white dark:bg-gray-800 p-3 rounded-lg border border-green-200 dark:border-green-700">
-                    <span className="font-semibold text-green-900 dark:text-green-100">
-                      Short URL:
-                    </span>
-                    <code className="flex-1 min-w-0 truncate text-green-900 dark:text-green-100 font-mono">
-                      {result.shortUrl}
-                    </code>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleCopy}
-                      className="h-8 transition-all duration-300 hover:scale-105 border-green-300 dark:border-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
-                    >
-                      <AnimatedCopyIcon
-                        className="h-4 w-4 mr-1"
-                        copied={copied}
-                      />
-                      {copied ? "Copied!" : "Copy"}
-                    </Button>
+
+                  {/* Short URL and QR Code side by side */}
+                  <div className="flex flex-col md:flex-row gap-4">
+                    {/* Short URL Section */}
+                    <div className="flex-1 bg-white dark:bg-gray-800 p-3 rounded-lg border border-green-200 dark:border-green-700">
+                      <span className="font-semibold text-green-900 dark:text-green-100 block mb-2">
+                        Short URL:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 min-w-0 truncate text-green-900 dark:text-green-100 font-mono">
+                          {result.shortUrl}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleCopy}
+                          className="h-8 transition-all duration-300 hover:scale-105 border-green-300 dark:border-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
+                        >
+                          <AnimatedCopyIcon
+                            className="h-4 w-4 mr-1"
+                            copied={copied}
+                          />
+                          {copied ? "Copied!" : "Copy"}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* QR Code Section */}
+                    <div className="flex flex-col items-center bg-white dark:bg-gray-800 p-3 rounded-lg border border-green-200 dark:border-green-700">
+                      <span className="font-semibold text-green-900 dark:text-green-100 mb-2 flex items-center gap-1">
+                        <QrCode className="h-4 w-4" />
+                        QR Code:
+                      </span>
+                      {loadingQR ? (
+                        <div className="w-24 h-24 flex items-center justify-center">
+                          <Loader2 className="h-6 w-6 animate-spin text-green-600" />
+                        </div>
+                      ) : result.qrCode ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <img
+                            src={result.qrCode}
+                            alt="QR Code"
+                            className="w-24 h-24 rounded"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (result.qrCode) {
+                                const link = document.createElement("a");
+                                link.href = result.qrCode;
+                                link.download = `qr-${result.shortCode}.png`;
+                                link.click();
+                                toast.success("QR code downloaded!");
+                              }
+                            }}
+                            className="h-7 text-xs border-green-300 dark:border-green-700"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Download
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="w-24 h-24 flex items-center justify-center text-muted-foreground text-xs">
+                          Loading...
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </AlertDescription>

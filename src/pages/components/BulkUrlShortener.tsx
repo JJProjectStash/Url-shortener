@@ -29,15 +29,22 @@ import {
   CheckCircle2,
   XCircle,
   Layers,
+  ClipboardPaste,
+  QrCode,
 } from "lucide-react";
 import {
   bulkShortenUrls,
   exportUrlsToCsv,
   downloadCsv,
   parseCsvForImport,
+  parseUrlsFromText,
+  getDefaultExpiryDate,
+  getMaxExpiryDate,
   type UrlData,
 } from "@/services/api";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { QRCodeButton } from "./QRCodeDialog";
 
 interface BulkUrlEntry {
   id: string;
@@ -59,16 +66,30 @@ export default function BulkUrlShortener({
   onUrlsCreated,
 }: BulkUrlShortenerProps) {
   const [entries, setEntries] = useState<BulkUrlEntry[]>([
-    { id: crypto.randomUUID(), originalUrl: "", expiresAt: "", category: "" },
+    {
+      id: crypto.randomUUID(),
+      originalUrl: "",
+      expiresAt: getDefaultExpiryDate(),
+      category: "",
+    },
   ]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BulkResult | null>(null);
+  const [pasteText, setPasteText] = useState("");
+  const [showPasteArea, setShowPasteArea] = useState(false);
+  const [globalCategory, setGlobalCategory] = useState("");
+  const [globalExpiry, setGlobalExpiry] = useState(getDefaultExpiryDate());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addEntry = () => {
     setEntries([
       ...entries,
-      { id: crypto.randomUUID(), originalUrl: "", expiresAt: "", category: "" },
+      {
+        id: crypto.randomUUID(),
+        originalUrl: "",
+        expiresAt: getDefaultExpiryDate(),
+        category: "",
+      },
     ]);
   };
 
@@ -119,7 +140,7 @@ export default function BulkUrlShortener({
       const response = await bulkShortenUrls(
         validEntries.map((entry) => ({
           originalUrl: entry.originalUrl,
-          expiresAt: entry.expiresAt || undefined,
+          expiresAt: entry.expiresAt || getDefaultExpiryDate(),
           category: entry.category || undefined,
         }))
       );
@@ -142,10 +163,12 @@ export default function BulkUrlShortener({
             {
               id: crypto.randomUUID(),
               originalUrl: "",
-              expiresAt: "",
+              expiresAt: getDefaultExpiryDate(),
               category: "",
             },
           ]);
+          setPasteText("");
+          setShowPasteArea(false);
           onUrlsCreated();
         }
       } else {
@@ -176,7 +199,7 @@ export default function BulkUrlShortener({
         parsed.map((item) => ({
           id: crypto.randomUUID(),
           originalUrl: item.originalUrl,
-          expiresAt: item.expiresAt || "",
+          expiresAt: item.expiresAt || getDefaultExpiryDate(),
           category: item.category || "",
         }))
       );
@@ -194,6 +217,33 @@ export default function BulkUrlShortener({
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const handlePasteUrls = () => {
+    if (!pasteText.trim()) {
+      toast.error("Please paste some URLs");
+      return;
+    }
+
+    const urls = parseUrlsFromText(pasteText);
+
+    if (urls.length === 0) {
+      toast.error("No valid URLs found in the text");
+      return;
+    }
+
+    setEntries(
+      urls.map((url) => ({
+        id: crypto.randomUUID(),
+        originalUrl: url,
+        expiresAt: globalExpiry || getDefaultExpiryDate(),
+        category: globalCategory || "",
+      }))
+    );
+
+    toast.success(`Found ${urls.length} URLs`);
+    setShowPasteArea(false);
+    setPasteText("");
   };
 
   const handleExportResults = () => {
@@ -253,6 +303,14 @@ export default function BulkUrlShortener({
             Import CSV
           </Button>
           <Button
+            variant={showPasteArea ? "default" : "outline"}
+            onClick={() => setShowPasteArea(!showPasteArea)}
+            className="flex items-center gap-2"
+          >
+            <ClipboardPaste className="h-4 w-4" />
+            Paste URLs
+          </Button>
+          <Button
             variant="outline"
             onClick={downloadTemplate}
             className="flex items-center gap-2"
@@ -271,6 +329,78 @@ export default function BulkUrlShortener({
             </Button>
           )}
         </div>
+
+        {/* Paste URLs Area */}
+        {showPasteArea && (
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-800 space-y-4 animate-fade-in">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-medium">
+                <ClipboardPaste className="h-4 w-4" />
+                Paste URLs (one per line or comma-separated)
+              </Label>
+              <Textarea
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                placeholder={`Paste your URLs here, for example:
+
+https://bit.ly/3QmVfXn
+https://tinyurl.com/2p9b4v9y
+https://rebrand.ly/demo123
+https://short.io/abc123
+https://is.gd/xyz789`}
+                className="min-h-[150px] font-mono text-sm"
+              />
+            </div>
+
+            {/* Global settings for pasted URLs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">
+                  Expiry for all URLs (default: 6 months)
+                </Label>
+                <Input
+                  type="date"
+                  value={globalExpiry}
+                  onChange={(e) => setGlobalExpiry(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  max={getMaxExpiryDate()}
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">
+                  Category for all URLs (optional)
+                </Label>
+                <Input
+                  type="text"
+                  value={globalCategory}
+                  onChange={(e) => setGlobalCategory(e.target.value)}
+                  placeholder="e.g., marketing, campaign"
+                  className="h-9"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handlePasteUrls}
+                className="flex items-center gap-2"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Parse URLs
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPasteArea(false);
+                  setPasteText("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* URL Entry Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -298,7 +428,7 @@ export default function BulkUrlShortener({
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground mb-1 block">
-                      Expires At (Optional)
+                      Expires At (Max: 6 months)
                     </Label>
                     <Input
                       type="date"
@@ -309,6 +439,7 @@ export default function BulkUrlShortener({
                       disabled={loading}
                       className="h-9"
                       min={new Date().toISOString().split("T")[0]}
+                      max={getMaxExpiryDate()}
                     />
                   </div>
                   <div>
@@ -398,6 +529,9 @@ export default function BulkUrlShortener({
                           <TableHead className="text-green-800 dark:text-green-200">
                             Category
                           </TableHead>
+                          <TableHead className="text-green-800 dark:text-green-200">
+                            QR
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -417,6 +551,14 @@ export default function BulkUrlShortener({
                                   {url.category}
                                 </Badge>
                               )}
+                            </TableCell>
+                            <TableCell>
+                              <QRCodeButton
+                                shortCode={url.shortCode}
+                                shortUrl={url.shortUrl}
+                                variant="outline"
+                                size="sm"
+                              />
                             </TableCell>
                           </TableRow>
                         ))}

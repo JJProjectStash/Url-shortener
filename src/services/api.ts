@@ -74,6 +74,59 @@ export interface QRCodeResponse {
 }
 
 /**
+ * Default expiration is 6 months, which is also the maximum
+ */
+export const DEFAULT_EXPIRY_MONTHS = 6;
+export const MAX_EXPIRY_MONTHS = 6;
+
+/**
+ * Get the default expiration date (6 months from now)
+ */
+export function getDefaultExpiryDate(): string {
+  const date = new Date();
+  date.setMonth(date.getMonth() + DEFAULT_EXPIRY_MONTHS);
+  return date.toISOString().split("T")[0];
+}
+
+/**
+ * Get the maximum expiration date (6 months from now)
+ */
+export function getMaxExpiryDate(): string {
+  const date = new Date();
+  date.setMonth(date.getMonth() + MAX_EXPIRY_MONTHS);
+  return date.toISOString().split("T")[0];
+}
+
+/**
+ * Parse plain text URLs (separated by newlines, commas, or spaces)
+ */
+export function parseUrlsFromText(text: string): string[] {
+  // Split by newlines, commas, or multiple spaces
+  const lines = text
+    .split(/[\n\r,]+/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  const urls: string[] = [];
+
+  for (const line of lines) {
+    // Try to extract URLs from each line
+    // This regex matches http/https URLs
+    const urlRegex = /(https?:\/\/[^\s]+)/gi;
+    const matches = line.match(urlRegex);
+
+    if (matches) {
+      urls.push(...matches);
+    } else if (line.startsWith("http://") || line.startsWith("https://")) {
+      urls.push(line);
+    }
+  }
+
+  // Remove duplicates
+  return [...new Set(urls)];
+}
+
+/**
  * Generic fetch wrapper with error handling
  */
 async function fetchWithErrorHandling<T>(
