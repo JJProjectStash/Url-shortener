@@ -1,5 +1,6 @@
 import { useState } from "react";
 import UrlShortener from "./components/UrlShortener";
+import BulkUrlShortener from "./components/BulkUrlShortener";
 import UrlList from "./components/UrlList";
 import Analytics from "./components/Analytics";
 import Hero from "./components/Hero";
@@ -12,11 +13,16 @@ import {
   DarkModeDecoration,
 } from "./components/AnimatedSVGs";
 import Footer from "./components/Footer";
+import { Button } from "@/components/ui/button";
+import { Link as LinkIcon, Layers } from "lucide-react";
 
 export default function Index() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedShortCode, setSelectedShortCode] = useState<string | null>(
     null
+  );
+  const [shortenerMode, setShortenerMode] = useState<"single" | "bulk">(
+    "single"
   );
 
   const handleUrlCreated = () => {
@@ -96,7 +102,37 @@ export default function Index() {
               />
             ) : (
               <>
-                <UrlShortener onUrlCreated={handleUrlCreated} />
+                {/* Mode Toggle */}
+                <div className="flex justify-center mb-6">
+                  <div className="inline-flex rounded-lg border-2 dark:border-gray-700 p-1 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+                    <Button
+                      variant={shortenerMode === "single" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setShortenerMode("single")}
+                      className="flex items-center gap-2"
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                      Single URL
+                    </Button>
+                    <Button
+                      variant={shortenerMode === "bulk" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setShortenerMode("bulk")}
+                      className="flex items-center gap-2"
+                    >
+                      <Layers className="h-4 w-4" />
+                      Bulk Create
+                    </Button>
+                  </div>
+                </div>
+
+                {/* URL Shortener Components */}
+                {shortenerMode === "single" ? (
+                  <UrlShortener onUrlCreated={handleUrlCreated} />
+                ) : (
+                  <BulkUrlShortener onUrlsCreated={handleUrlCreated} />
+                )}
+
                 <UrlList
                   refreshTrigger={refreshTrigger}
                   onViewAnalytics={handleViewAnalytics}
